@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 수영장 참석 통계</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --ocean: #0077b6;
+    --wave: #00b4d8;
+    --deep: #03045e;
+    --go: #2dc653;
+    --no: #e63946;
+    --coral: #f77f00;
+    --card: #ffffff;
+    --border: #ddeef8;
+    --muted: #6e8fa8;
+    --text: #1a2d42;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* 헤더 */
+  header {
+    background: linear-gradient(135deg, #0d1b2a, #1b4f72 60%, #2e86ab);
+    padding: 32px 24px 60px; position: relative; overflow: hidden;
+  }
+  header::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 40px;
+    background: var(--bg); clip-path: ellipse(60% 100% at 50% 100%);
+  }
+  .hdr-inner { max-width: 860px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1.6rem; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+  header p { color: #a8d5e2; font-size: 0.85rem; margin-top: 4px; }
+  .nav-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; padding: 8px 16px; border-radius: 20px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    backdrop-filter: blur(4px); transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.25); }
+
+  /* 메인 */
+  main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* 카드 */
+  .card { background: var(--card); border-radius: 18px; box-shadow: 0 3px 20px rgba(0,0,0,0.07); padding: 24px; margin-bottom: 16px; }
+  .card-title { font-size: 0.9rem; font-weight: 700; color: var(--ocean); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: block; width: 3px; height: 18px; border-radius: 2px; background: linear-gradient(var(--wave), var(--ocean)); }
+
+  /* 요약 카드 */
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .s-card {
+    background: var(--card); border-radius: 16px; padding: 18px 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-top: 4px solid var(--ocean);
+    text-align: center;
+  }
+  .s-num { font-size: 2.2rem; font-weight: 900; line-height: 1; color: var(--ocean); }
+  .s-lbl { font-size: 0.75rem; color: var(--muted); margin-top: 6px; font-weight: 500; }
+
+  /* 필터 */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .f-select {
+    padding: 8px 14px; border: 2px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 0.85rem; color: var(--text);
+    background: #fff; outline: none; cursor: pointer; transition: border-color 0.2s;
+  }
+  .f-select:focus { border-color: var(--wave); }
+  .f-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); }
+  .clear-btn {
+    padding: 8px 14px; border: 2px solid #fde8ea; border-radius: 10px;
+    background: #fff; font-family: inherit; font-size: 0.82rem;
+    color: var(--no); font-weight: 700; cursor: pointer; transition: all 0.15s;
+    margin-left: auto;
+  }
+  .clear-btn:hover { background: #fde8ea; }
+
+  /* 반별 바 차트 */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .bar-label { font-size: 0.84rem; font-weight: 600; width: 80px; flex-shrink: 0; text-align: right; color: var(--text); }
+  .bar-track { flex: 1; height: 22px; background: #eef4fa; border-radius: 11px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 11px; transition: width 0.6s cubic-bezier(.34,1.2,.64,1); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }
+  .bar-pct { font-size: 0.75rem; font-weight: 700; color: #fff; font-family: 'DM Mono', monospace; }
+  .bar-count { font-size: 0.78rem; color: var(--muted); width: 60px; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+
+  /* 테이블 */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  .tbl th { background: #f4f8fc; color: var(--muted); font-size: 0.73rem; font-weight: 700; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: #f8fbff; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+  .b-o  { background: #d4f5e0; color: #1a7a3c; }
+  .b-x  { background: #fde8ea; color: #c0392b; }
+  .b-cls { background: #e8f0fe; color: var(--ocean); }
+  .b-t  { background: #fff0e0; color: #a85000; }
+
+  /* 날짜 카드 목록 */
+  .date-cards { display: flex; flex-direction: column; gap: 10px; }
+  .date-card { border: 2px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .date-card-hdr {
+    background: linear-gradient(90deg, #e8f0fe, #f0f8ff);
+    padding: 12px 18px; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+  }
+  .date-card-hdr:hover { background: linear-gradient(90deg, #d8e6fe, #e8f4ff); }
+  .date-card-hdr .dt { font-family: 'DM Mono', monospace; font-size: 0.95rem; font-weight: 700; color: var(--ocean); }
+  .date-card-hdr .dt-sum { font-size: 0.8rem; color: var(--muted); }
+  .date-card-body { display: none; padding: 14px 18px; }
+  .date-card-body.open { display: block; }
+
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 0.9rem; line-height: 2; }
+
+  @media (max-width: 600px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    header h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div>
+      <h1>📊 참석 통계</h1>
+      <p>무지개어린이집 수영장</p>
+    </div>
+    <a href="입력.html" class="nav-btn">← ✏️ 입력으로</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- 요약 -->
+  <div class="summary-grid" id="summaryGrid">
+    <div class="s-card"><div class="s-num" id="s-sessions">0</div><div class="s-lbl">수영장 횟수</div></div>
+    <div class="s-card" style="border-color:var(--go)"><div class="s-num" style="color:var(--go)" id="s-o">0</div><div class="s-lbl">총 참석 (아동)</div></div>
+    <div class="s-card" style="border-color:var(--no)"><div class="s-num" style="color:var(--no)" id="s-x">0</div><div class="s-lbl">총 불참 (아동)</div></div>
+    <div class="s-card" style="border-color:var(--coral)"><div class="s-num" style="color:var(--coral)" id="s-rate">0%</div><div class="s-lbl">전체 참석률</div></div>
+  </div>
+
+  <!-- 반별 참석률 바 차트 -->
+  <div class="card">
+    <div class="card-title">🏫 반별 참석률</div>
+    <div id="barChart"></div>
+  </div>
+
+  <!-- 날짜별 기록 -->
+  <div class="card">
+    <div class="card-title">📅 날짜별 기록</div>
+    <div id="dateSections"></div>
+  </div>
+
+  <!-- 전체 기록 테이블 -->
+  <div class="card">
+    <div class="card-title">📋 전체 기록</div>
+    <div class="filter-row">
+      <span class="f-label">필터:</span>
+      <select class="f-select" id="fDate" onchange="renderTable()"><option value="">전체 날짜</option></select>
+      <select class="f-select" id="fClass" onchange="renderTable()"><option value="">전체 반</option></select>
+      <select class="f-select" id="fType" onchange="renderTable()">
+        <option value="">전체</option>
+        <option value="아동">아동</option>
+        <option value="교사">교사</option>
+      </select>
+      <select class="f-select" id="fYN" onchange="renderTable()">
+        <option value="">O/X 전체</option>
+        <option value="O">O (참석)</option>
+        <option value="X">X (불참)</option>
+      </select>
+      <button class="clear-btn" onclick="clearAll()">🗑 전체 삭제</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr><th>날짜</th><th>반</th><th>구분</th><th>이름</th><th>참석</th></tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let records = [];
+
+function load() {
+  records = JSON.parse(localStorage.getItem('swimmingRecords') || '[]');
+  renderAll();
+}
+
+function renderAll() {
+  renderSummary();
+  renderBars();
+  renderDates();
+  updateFilters();
+  renderTable();
+}
+
+// ── 요약 ─────────────────────────────────────────────────
+function renderSummary() {
+  const children = records.filter(r => r.type === '아동');
+  const o = children.filter(r => r.yn === 'O').length;
+  const x = children.filter(r => r.yn === 'X').length;
+  const sessions = new Set(records.map(r => r.date)).size;
+  const rate = (o + x) > 0 ? Math.round(o / (o + x) * 100) : 0;
+  document.getElementById('s-sessions').textContent = sessions;
+  document.getElementById('s-o').textContent = o;
+  document.getElementById('s-x').textContent = x;
+  document.getElementById('s-rate').textContent = rate + '%';
+}
+
+// ── 바 차트 ───────────────────────────────────────────────
+function renderBars() {
+  const el = document.getElementById('barChart');
+  const children = records.filter(r => r.type === '아동');
+  const byClass = {};
+  children.forEach(r => {
+    if (!byClass[r.cls]) byClass[r.cls] = { o: 0, total: 0 };
+    byClass[r.cls].total++;
+    if (r.yn === 'O') byClass[r.cls].o++;
+  });
+  const entries = Object.entries(byClass).sort((a, b) => {
+    const ra = a[1].total ? a[1].o / a[1].total : 0;
+    const rb = b[1].total ? b[1].o / b[1].total : 0;
+    return rb - ra;
+  });
+  if (!entries.length) { el.innerHTML = '<div class="empty">저장된 데이터가 없어요 🌊<br>입력 페이지에서 참석을 기록해주세요!</div>'; return; }
+  el.innerHTML = entries.map(([cls, s]) => {
+    const rate = s.total ? Math.round(s.o / s.total * 100) : 0;
+    const color = rate >= 80 ? 'var(--go)' : rate >= 50 ? 'var(--coral)' : 'var(--no)';
+    return `<div class="bar-row">
+      <div class="bar-label">${cls}반</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${rate}%;background:${color};">
+          ${rate > 15 ? `<span class="bar-pct">${rate}%</span>` : ''}
+        </div>
+      </div>
+      <div class="bar-count">${s.o}/${s.total}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── 날짜별 ────────────────────────────────────────────────
+function renderDates() {
+  const el = document.getElementById('dateSections');
+  const dates = [...new Set(records.map(r => r.date))].sort().reverse();
+  if (!dates.length) { el.innerHTML = '<div class="empty">데이터 없음</div>'; return; }
+  el.innerHTML = dates.map((date, i) => {
+    const dr = records.filter(r => r.date === date);
+    const children = dr.filter(r => r.type === '아동');
+    const o = children.filter(r => r.yn === 'O').length;
+    const total = children.length;
+    const rate = total ? Math.round(o / total * 100) : 0;
+    const classes = [...new Set(dr.map(r => r.cls))];
+    const rows = dr.map(r => `<tr>
+      <td><span class="badge b-cls">${r.cls}반</span></td>
+      <td><span class="badge b-t">${r.type}</span></td>
+      <td style="font-weight:500;">${r.name}</td>
+      <td><span class="badge ${r.yn === 'O' ? 'b-o' : 'b-x'}">${r.yn}</span></td>
+    </tr>`).join('');
+    return `<div class="date-card">
+      <div class="date-card-hdr" onclick="toggleDate(this)">
+        <div>
+          <div class="dt">${date}</div>
+          <div class="dt-sum">${classes.map(c => c + '반').join(' · ')} · 아동 ${o}/${total}명 참석 (${rate}%)</div>
+        </div>
+        <span style="color:var(--muted);font-size:1rem;">▾</span>
+      </div>
+      <div class="date-card-body ${i === 0 ? 'open' : ''}">
+        <table class="tbl">
+          <thead><tr><th>반</th><th>구분</th><th>이름</th><th>참석</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDate(hdr) {
+  const body = hdr.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── 필터 + 테이블 ─────────────────────────────────────────
+function updateFilters() {
+  const dates = [...new Set(records.map(r => r.date))].sort().reverse();
+  const classes = [...new Set(records.map(r => r.cls))];
+  document.getElementById('fDate').innerHTML = '<option value="">전체 날짜</option>' + dates.map(d => `<option value="${d}">${d}</option>`).join('');
+  document.getElementById('fClass').innerHTML = '<option value="">전체 반</option>' + classes.map(c => `<option value="${c}">${c}반</option>`).join('');
+}
+
+function renderTable() {
+  const fd = document.getElementById('fDate').value;
+  const fc = document.getElementById('fClass').value;
+  const ft = document.getElementById('fType').value;
+  const fy = document.getElementById('fYN').value;
+  const filtered = records.filter(r =>
+    (!fd || r.date === fd) && (!fc || r.cls === fc) &&
+    (!ft || r.type === ft) && (!fy || r.yn === fy)
+  ).slice().reverse();
+  const tbody = document.getElementById('tblBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">기록이 없어요 🏊</td></tr>'; return;
+  }
+  tbody.innerHTML = filtered.map(r => `<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:0.82rem;">${r.date}</td>
+    <td><span class="badge b-cls">${r.cls}반</span></td>
+    <td><span class="badge b-t">${r.type}</span></td>
+    <td style="font-weight:500;">${r.name}</td>
+    <td><span class="badge ${r.yn === 'O' ? 'b-o' : 'b-x'}">${r.yn}</span></td>
+  </tr>`).join('');
+}
+
+function clearAll() {
+  if (!confirm('모든 기록을 삭제할까요?')) return;
+  localStorage.removeItem('swimmingRecords');
+  records = [];
+  renderAll();
+}
+
+// 페이지 포커스 시 새로고침 (입력 후 통계 탭 이동 시 반영)
+window.addEventListener('focus', load);
+load();
+</script>
+</body>
+</html>
