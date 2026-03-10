@@ -264,7 +264,9 @@ function save() {
   if (!date) { toast('⚠️ 날짜를 선택해주세요'); return; }
   const { cls, group } = selectedClass;
 
-  const records = JSON.parse(localStorage.getItem('swimmingRecords') || '[]');
+  // 같은 날짜 + 같은 반 기록은 삭제 후 새로 저장 (덮어쓰기)
+  let records = JSON.parse(localStorage.getItem('swimmingRecords') || '[]');
+  records = records.filter(r => !(r.date === date && r.cls === cls));
   let count = 0;
 
   document.querySelectorAll('#teacherList .ci, #childList .ci').forEach(d => {
@@ -279,7 +281,7 @@ function save() {
   });
 
   localStorage.setItem('swimmingRecords', JSON.stringify(records));
-  toast(`✅ ${cls}반 ${count}명 저장!`);
+  toast(`✅ ${cls}반 저장 완료! (기존 기록 대체)`);
   document.querySelectorAll('.ci').forEach(d => d.classList.remove('on'));
 }
 
